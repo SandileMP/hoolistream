@@ -1,7 +1,8 @@
 const express = require('express');
 const AWS = require('aws-sdk');
 const app = express();
-const bodyParser = require('body-parser');
+const bodyParser = require('body-parser')
+AWS.config.update({ region: 'eu-west-1' });
 // port on which the server listens
 const port = 3000;
 const { v4: uuidv4 } = require('uuid');
@@ -10,7 +11,6 @@ const { v4: uuidv4 } = require('uuid');
 app.use(bodyParser.json());
 //DynamoDB client
 const client = new AWS.DynamoDB.DocumentClient();
-AWS.config.update({ region: 'eu-west-1' });
 const user_profile = 'user_profile';
 const user_stream = 'user_stream';
 
@@ -23,12 +23,46 @@ app.get("/user/:userId", (req, res) => {
         }
     };
     client.get(userId, function(err, data) {
-        if (err)
+        if (err){
+            console.log(err)
             res.status(500).send("Something went wrong while trying to looking up streaming data")
-        else
-            res.status(200).send(res);
+        }
+        else{
+            console.log(streamChecker.getThreshold(data));
+            const params ={
+                KeyConditionExpression: 'userId = :userId',
+                FilterExpression : "contains(#userId, :userId)",
+                ExpressionAttributeValues: {
+                    ':userId': data.Item.userId
+                },
+                ExpressionAttributeNames: {
+                    '#userId': "userId"
+                },
+                TableName: 'user_stream'
+            }
+            client.scan(params, function (err, filterData){
+                if (err){
+                    console.log(err)
+                    res.status(400).send("Error while getting filtered data");
+                }else {
+                    console.log(filterData.Count)
+                    if (filterData.Count > streamChecker.getThreshold(data)){
+                        res.status(429).send("User has exceeded limits");
+                    }else {
+                        res.status(200).send("User has is within limits");
+                    }
+
+                }
+            })
+        }
     });
 });
+
+const streamChecker = {
+    getThreshold: (data) => {
+      return data.Item.Threshold
+    }
+}
 
 app.listen(port, () => {
     console.log(`Listening on port ${port}`);
