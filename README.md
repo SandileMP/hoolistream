@@ -59,3 +59,6 @@ To call the API, all that needs to be passed is the users email as a path variab
 https://hoolicheck.qntmsoft.co.za/user/{useremail}
 E.g
 https://hoolicheck.qntmsoft.co.za/user/sandile@qntm.co.za
+
+## Work outstanding
+-API tests using a framework like Jest/Supertest
