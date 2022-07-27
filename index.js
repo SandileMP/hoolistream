@@ -4,7 +4,7 @@ const app = express();
 const bodyParser = require('body-parser')
 AWS.config.update({ region: 'eu-west-1' });
 // port on which the server listens
-const port = 3000;
+const port = 80;
 const { v4: uuidv4 } = require('uuid');
 // transforms every input request body
 // into json objects for reading
@@ -57,7 +57,9 @@ app.get("/user/:userId", (req, res) => {
         }
     });
 });
-
+app.get('/health', (req, res) => {
+    res.send('Hello World!')
+})
 const streamChecker = {
     getThreshold: (data) => {
       return data.Item.Threshold
